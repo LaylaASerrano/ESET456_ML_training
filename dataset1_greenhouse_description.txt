@@ -1,0 +1,94 @@
+================================================================================
+DATASET — SMART GREENHOUSE MONITOR
+Class Challenge
+================================================================================
+
+OVERVIEW
+--------
+A vertical farm operator has deployed environmental sensors across 12 growing
+zones. Each zone monitors temperature, humidity, soil moisture, light intensity,
+CO2 concentration, and nutrient pH every 15 minutes over 21 days (3 weeks).
+Agronomists manually flagged plant stress events during the data collection
+period. Stress events were caused by four conditions: heat stress, drought
+(soil moisture drop), CO2 depletion, and nutrient pH drift.
+
+FILE
+----
+greenhouse_sensor_data.csv
+
+ROWS
+----
+24,192 rows (12 zones x 2,016 timestamps per zone)
+
+COLUMNS
+-------
+timestamp         Date and time of reading (15-min intervals)
+zone              Growing zone identifier (Zone_01 to Zone_12)
+temperature_c     Air temperature inside the zone (Celsius)
+humidity_pct      Relative humidity (%)
+soil_moisture     Volumetric soil moisture content (%)
+light_lux         Photosynthetically active light intensity (lux)
+co2_ppm           CO2 concentration (parts per million)
+nutrient_ph       Nutrient solution pH (0-14 scale; optimal = 5.8-6.5)
+plant_stress      TARGET — 1 = stress event active, 0 = normal
+
+KEY STATISTICS
+--------------
+Stress event rate:    ~2.2% of readings
+Number of zones:      12
+Stress types:         Heat, drought, CO2 depletion, pH drift
+Missing values:       ~2.5% across temperature, humidity, soil moisture,
+                      CO2, and pH columns
+Collection period:    21 days (3 weeks)
+Temporal resolution:  15 minutes
+
+NOTES
+------------------
+- The dataset has class imbalance: stress events are rare (~2.2%).
+  Consider class_weight='balanced' or evaluate using recall and F1,
+  not accuracy alone.
+- Stress events last between 1 and 5 hours. Consecutive rows within a
+  stress event will have plant_stress = 1.
+- Each zone has a different baseline sensor profile. The model must learn
+  what is abnormal relative to each zone's typical operating range.
+- Missing values must be handled before training. Use zone-level medians
+  rather than dataset-wide medians where possible.
+
+================================================================================
+RESEARCH QUESTIONS
+================================================================================
+
+PRIMARY QUESTION
+----------------
+Q1. Can we accurately detect plant stress events from environmental sensor
+    readings alone — and identify which sensor provides the earliest and most
+    reliable warning signal?
+
+    Suggested approach: Train a Random Forest classifier on the sensor
+    features. Use feature importance scores to rank which sensor best
+    predicts stress. Evaluate using recall (how many stress events were
+    caught) rather than accuracy. Without using the stress labels, can an unsupervised model discover distinct operating conditions in the greenhouse data — and do those
+    clusters correspond to the known stress and normal periods? Maybe apply K-Means clustering to the sensor readings. Use the elbow method and silhouette score to choose k. Then reveal
+    the stress labels and measure what fraction of stress events fall
+    inside a single cluster. Interpret each cluster as an operating regime
+    (e.g. ideal conditions, hot and dry, CO2-depleted).
+
+
+
+EXTENSION QUESTIONS (Bonus)
+-------------------------------
+Q-Bonus. Does the model perform equally well across all 12 growing zones, or
+    does it struggle with certain zones? Train separate models per zone
+    and compare performance.
+
+
+HOMEWORK
+----------------------------------
+4. Apply K-Means clustering. Justify your choice of k.
+5. Compare cluster membership with the plant_stress labels. Show the
+   fault rate per cluster in a bar chart.
+6. Write a one-paragraph recommendation addressed to the farm operator:
+   which sensor should trigger an automatic alert, at what threshold,
+   and what action should the system take when stress is detected?
+
+================================================================================
