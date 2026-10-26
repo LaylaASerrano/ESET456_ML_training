@@ -1,0 +1,119 @@
+================================================================================
+DATASET — WEARABLE FATIGUE MONITOR FOR SHIFT WORKERS
+Class Challenge
+================================================================================
+
+OVERVIEW
+--------
+Fifteen factory workers wore wristband sensors for 14 days across rotating
+day and night shifts. The bands recorded heart rate, heart rate variability
+(HRV), skin temperature, step count per 5-minute window, and galvanic skin
+response (a measure of physiological stress) continuously. Workers
+self-reported a fatigue score (1 to 5) at the start and end of each shift.
+Occupational health guidelines define fatigue scores of 4 or above during
+active shifts as a safety risk requiring intervention.
+
+FILE
+----
+worker_fatigue_data.csv
+
+ROWS
+----
+60,480 rows (15 workers x 4,032 timestamps per worker)
+
+COLUMNS
+-------
+timestamp            Date and time of reading (5-min intervals)
+worker_id            Worker identifier (W01 to W15)
+night_shift          1 = night shift (18:00-06:00), 0 = day shift (06:00-18:00)
+shift_hour           Hours elapsed since the current shift started (0-12)
+heart_rate_bpm       Heart rate in beats per minute
+hrv_ms               Heart rate variability in milliseconds (higher = less stressed)
+skin_temp_c          Skin surface temperature (Celsius)
+steps_5min           Step count in the 5-minute recording window
+gsr_microsiemens     Galvanic skin response (higher = more physiological stress)
+fatigue_score        TARGET (regression) — self-reported fatigue 1=alert, 5=exhausted
+dangerous_fatigue    TARGET (classification) — 1 = fatigue score >= 4 during active shift
+
+KEY STATISTICS
+--------------
+Number of workers:       15
+Collection period:       14 days
+Temporal resolution:     5 minutes
+Dangerous fatigue rate:  ~18% of readings
+Night shift proportion:  ~50% of active shift readings
+Missing values:          ~3% across heart_rate_bpm, hrv_ms,
+                         skin_temp_c, and gsr_microsiemens
+
+PHYSIOLOGICAL CONTEXT
+---------------------
+Heart rate:     Rises with physical activity and increases further with
+                cumulative fatigue across a long shift.
+HRV:            Decreases as fatigue increases. Low HRV is associated
+                with impaired decision-making and slower reaction times.
+Skin temperature: Rises slightly with sustained exertion and stress.
+GSR:            Rises with both physical exertion and psychological stress.
+                Night shift workers show consistently higher GSR.
+Shift hour:     A derived temporal feature included in the dataset.
+                Fatigue increases non-linearly with hours worked.
+
+NOTES
+------------------
+- Two targets are provided. Use fatigue_score for regression.
+  Use dangerous_fatigue for classification.
+- The dataset is structured as a time series per worker. For tabular
+  models (XGBoost, Random Forest) treat each row independently.
+  For LSTM, consider building 30-minute sliding windows per worker.
+- Night shift workers show higher fatigue scores for the same number
+  of hours worked. night_shift is an important feature.
+- shift_hour is already engineered for you. Consider whether adding
+  shift_hour^2 (a polynomial feature) captures the non-linear fatigue curve.
+
+================================================================================
+RESEARCH QUESTIONS
+================================================================================
+
+PRIMARY QUESTION
+----------------
+Q1. Can we predict a worker's fatigue score from physiological wearable
+    sensor data — and which sensor gives the earliest warning of high fatigue?
+
+    Suggested approach: Train an XGBoost or Random Forest regressor to
+    predict fatigue_score. Evaluate with MAE and R2. Use feature importance
+    to identify the leading physiological indicator of fatigue onset.
+
+SECONDARY QUESTION
+------------------
+Q2. Can we automatically flag dangerous fatigue (score >= 4 during an active
+    shift) before the worker self-reports it — using only sensor readings
+    from earlier in the shift?
+
+    Suggested approach: Train an Isolation Forest on sensor readings from
+    rested workers (fatigue_score = 1 or 2). Score all readings and compare
+    the anomaly score distribution between rested and fatigued workers.
+    Alternatively, train a binary classifier using dangerous_fatigue as the
+    target and evaluate recall for the dangerous class. You can also exoplore Build a 30-minute sliding window LSTM per worker and classify
+    dangerous_fatigue from the sequence of physiological readings.
+    Compare its recall against Isolation Forest.
+
+EXTENSION QUESTIONS (bonus)
+-------------------------------
+
+Q-Bonus. Define a deployment scenario: at what predicted fatigue score should
+    the system alert a supervisor? What are the consequences of a false
+    alarm (worker sent home unnecessarily) vs a missed alert (fatigued
+    worker continues operating machinery)? Calculate the expected cost
+    of each error type at your chosen threshold.
+
+Homework deliverable (next class)
+----------------------------------
+H1. Train a second model (Isolation Forest or Random Forest classifier)
+   to detect dangerous_fatigue. Report recall and precision.
+H2. Plot the predicted fatigue score and the anomaly score on the same
+   timeline for 3 workers. Show where the model would have issued an alert
+   and how many minutes before the worker reported high fatigue.
+H3. Write a one-paragraph deployment recommendation for the factory safety
+   officer: which model, at what threshold, and what action the system
+   should take when dangerous fatigue is predicted.
+
+================================================================================
